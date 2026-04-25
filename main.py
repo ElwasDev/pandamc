@@ -16,6 +16,24 @@ from flask import Flask, send_from_directory, jsonify, request, redirect, sessio
 import threading
 
 # ─────────────────────────────────────────
+#  EMOJI MAPPING
+# ─────────────────────────────────────────
+EMOJI_MAPPING = {
+    'nightbox':       'nightbox',
+    'minecraft':      'minecraft',
+    'cohete_nightbox': 'cohete_nightbox',
+}
+
+def get_emoji(guild, name):
+    """Busca un emoji por nombre en el servidor y lo devuelve como string."""
+    if not name or not guild:
+        return ''
+    for emoji in guild.emojis:
+        if emoji.name == name:
+            return str(emoji)
+    return ''
+
+# ─────────────────────────────────────────
 #  SERVIDOR WEB (Flask)
 # ─────────────────────────────────────────
 app_web = Flask(__name__, static_folder='web')
@@ -279,7 +297,7 @@ async def enviar_al_canal_revision_web(data):
                 miembro = await guild.fetch_member(int(discord_id))
             if miembro:
                 dm_embed = discord.Embed(
-                    title="<:duda_mineback:1472653801679884333> HEMOS RECIBIDO TU POSTULACION",
+                    title="📬 HEMOS RECIBIDO TU POSTULACION",
                     description=(
                         "Esta notificación aclara que la recibimos correctamente.\n\n"
                         "Hemos recibido tu `postulación para formar parte del equipo staff de NightBox` "
@@ -287,7 +305,7 @@ async def enviar_al_canal_revision_web(data):
                         "Desde ahora, hasta la resolución de la postulación, pueden pasar días. "
                         "Por favor, ten paciencia.\n\n"
                         "> Te notificaremos por este medio en cuanto el equipo tome una decisión.\n\n"
-                        "<:minecraft:1497711745073025135> **Actualización del estado**\n"
+                        "📋 **Actualización del estado**\n"
                         "> Estado actual: `Pendiente`"
                     ),
                     color=discord.Color.red(),
@@ -315,7 +333,7 @@ class BotonPostular(discord.ui.View):
             emoji="🌐"
         ))
 
-    @discord.ui.button(label="Postularse (Chat)", style=discord.ButtonStyle.primary, custom_id="postular_button", emoji="<:minecraft:1497711745073025135>")
+    @discord.ui.button(label="Postularse (Chat)", style=discord.ButtonStyle.primary, custom_id="postular_button", emoji="⛏️")
     async def postular_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in postulaciones_activas:
             await interaction.response.send_message("❌ Ya tienes una postulación en proceso.", ephemeral=True)
@@ -379,12 +397,15 @@ async def temporizador_postulacion(canal, user_id, minutos):
 
 
 async def iniciar_postulacion(canal, usuario):
+    guild = canal.guild
+    nightbox_e  = get_emoji(guild, EMOJI_MAPPING['nightbox'])  or '🌙'
+    minecraft_e = get_emoji(guild, EMOJI_MAPPING['minecraft']) or '⛏️'
     embed = discord.Embed(
-        title="<:nightbox:1497711599845113996> Proceso de Postulación — Staff NightBox",
+        title=f"{nightbox_e} Proceso de Postulación — Staff NightBox",
         description=f"¡Hola {usuario.mention}! Bienvenido a tu canal privado de postulación.",
         color=discord.Color.red()
     )
-    embed.add_field(name="<:minecraft:1497711745073025135> Instrucciones", value=(
+    embed.add_field(name=f"{minecraft_e} Instrucciones", value=(
         "**1.** Responde cada pregunta de forma clara y detallada.\n"
         "**2.** Revisa tus respuestas antes de enviar.\n"
         "**3.** Tienes **34 minutos** para completar el proceso."
@@ -452,7 +473,7 @@ class BotonesRevision(discord.ui.View):
         except Exception as e:
             print(f"No se pudo editar el DM: {e}")
 
-    @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="<:si_mineback:1455742911739199724>")
+    @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="✅")
     async def aceptar(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
@@ -479,10 +500,10 @@ class BotonesRevision(discord.ui.View):
         if usuario:
             try:
                 e_dm = discord.Embed(
-                    title="<:si_mineback:1455742911739199724> ACTUALIZACION DE TU POSTULACION",
+                    title="✅ ACTUALIZACION DE TU POSTULACION",
                     description=(
                         "¡Tu postulación fue **aceptada**! ¡Bienvenido al equipo! 🎊\n\n"
-                        "<:minecraft:1497711745073025135> **Actualización del estado**\n"
+                        "📋 **Actualización del estado**\n"
                         "> Estado actual: `Aceptado` ✅"
                     ),
                     color=discord.Color.green(),
@@ -501,7 +522,7 @@ class BotonesRevision(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
         await interaction.followup.send(f"> ✅ Aceptada por {interaction.user.mention}")
 
-    @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="<:No_mineback:1455742851601268868>")
+    @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="❌")
     async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
@@ -528,10 +549,10 @@ class BotonesRevision(discord.ui.View):
         if usuario:
             try:
                 e_dm = discord.Embed(
-                    title="<:No_mineback:1455742851601268868> ACTUALIZACION DE TU POSTULACION",
+                    title="❌ ACTUALIZACION DE TU POSTULACION",
                     description=(
                         "Tu postulación fue **rechazada**. Puedes reintentar en 14 días. 💪\n\n"
-                        "<:minecraft:1497711745073025135> **Actualización del estado**\n"
+                        "📋 **Actualización del estado**\n"
                         "> Estado actual: `Rechazado` ❌"
                     ),
                     color=discord.Color.red(),
@@ -556,7 +577,7 @@ class ConfirmarPostulacion(discord.ui.View):
         super().__init__(timeout=None)
         self.user_id = user_id
 
-    @discord.ui.button(label="Enviar postulación", style=discord.ButtonStyle.success, emoji="<:si_mineback:1455742911739199724>")
+    @discord.ui.button(label="Enviar postulación", style=discord.ButtonStyle.success, emoji="✅")
     async def enviar(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ Esta no es tu postulación.", ephemeral=True)
@@ -579,7 +600,7 @@ class ConfirmarPostulacion(discord.ui.View):
 
         if canal_revision:
             embed = discord.Embed(
-                title="<:llave_mineback:1454888619478351973> Nueva postulación de staff",
+                title="🔑 Nueva postulación de staff",
                 description=f"**Usuario:** {interaction.user.mention} | **ID:** {interaction.user.id}",
                 color=discord.Color.red(), timestamp=datetime.now()
             )
@@ -593,7 +614,7 @@ class ConfirmarPostulacion(discord.ui.View):
 
         try:
             dm_embed = discord.Embed(
-                title="<:duda_mineback:1472653801679884333> HEMOS RECIBIDO TU POSTULACION",
+                title="📬 HEMOS RECIBIDO TU POSTULACION",
                 description=(
                     "Esta notificación aclara que la recibimos correctamente.\n\n"
                     "Hemos recibido tu `postulación para formar parte del equipo staff de NightBox` "
@@ -601,7 +622,7 @@ class ConfirmarPostulacion(discord.ui.View):
                     "Desde ahora, hasta la resolución de la postulación, pueden pasar días. "
                     "Por favor, ten paciencia.\n\n"
                     "> Te notificaremos por este medio en cuanto el equipo tome una decisión.\n\n"
-                    "<:minecraft:1497711745073025135> **Actualización del estado**\n"
+                    "📋 **Actualización del estado**\n"
                     "> Estado actual: `Pendiente`"
                 ),
                 color=discord.Color.red(),
@@ -619,7 +640,7 @@ class ConfirmarPostulacion(discord.ui.View):
         try: await interaction.channel.delete()
         except: pass
 
-    @discord.ui.button(label="Cancelar", style=discord.ButtonStyle.danger, emoji="<:No_mineback:1455742851601268868>")
+    @discord.ui.button(label="Cancelar", style=discord.ButtonStyle.danger, emoji="❌")
     async def cancelar(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("❌ Esta no es tu postulación.", ephemeral=True)
@@ -718,19 +739,24 @@ async def on_message(message):
 @bot.tree.command(name="setup_postulaciones", description="Configura el sistema de postulaciones (Solo administradores)")
 @app_commands.checks.has_permissions(administrator=True)
 async def setup_postulaciones(interaction: discord.Interaction):
+    guild = interaction.guild
+    nightbox_e = get_emoji(guild, EMOJI_MAPPING['nightbox'])       or '🌙'
+    minecraft_e = get_emoji(guild, EMOJI_MAPPING['minecraft'])     or '⛏️'
+    cohete_e   = get_emoji(guild, EMOJI_MAPPING['cohete_nightbox']) or '🚀'
+
     embed = discord.Embed(
         description=(
-            "# <:nightbox:1497711599845113996> - ¡POSTULACIONES ABIERTAS!\n"
+            f"# {nightbox_e} - ¡POSTULACIONES ABIERTAS!\n"
             "¿Estás interesado en ser parte del Staff-Team?\n"
             "Si es así, no esperes más. Esta es tu oportunidad. Postúlate dando clic en el botón de abajo.\n\n"
             "# Requisitos a cumplir:\n"
-            "<:minecraft:1497711745073025135>: Tener mínimo 14 Años.\n"
-            "<:minecraft:1497711745073025135>: Ser premium.\n"
-            "<:minecraft:1497711745073025135>: Historial limpio en el servidor.\n"
-            "<:minecraft:1497711745073025135>: No ser staff en otro servidor.\n"
-            "<:minecraft:1497711745073025135>: Buena ortografía y madurez.\n\n"
-            "<:cohete_nightbox:1497711864824725646> - **¡Postúlate dando clic en el botón de abajo!**\n\n"
-            "<:nightbox:1497711599845113996> | NightBox"
+            f"{minecraft_e}: Tener mínimo 14 Años.\n"
+            f"{minecraft_e}: Ser premium.\n"
+            f"{minecraft_e}: Historial limpio en el servidor.\n"
+            f"{minecraft_e}: No ser staff en otro servidor.\n"
+            f"{minecraft_e}: Buena ortografía y madurez.\n\n"
+            f"{cohete_e} - **¡Postúlate dando clic en el botón de abajo!**\n\n"
+            f"{nightbox_e} | NightBox"
         ),
         color=discord.Color.red()
     )
