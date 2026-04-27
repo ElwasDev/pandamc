@@ -105,7 +105,7 @@ def callback():
 
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "DiscordBot (PandaMC, 1.0)"
+            "User-Agent": "DiscordBot (NightBox, 1.0)"
         }
         if _requests:
             r = _requests.post(DISCORD_TOKEN_URL, data=data, headers=headers)
@@ -121,7 +121,7 @@ def callback():
             return redirect("/?error=no_token")
 
         if _requests:
-            r2 = _requests.get(DISCORD_USER_URL, headers={"Authorization": f"Bearer {access_token}", "User-Agent": "DiscordBot (PandaMC, 1.0)"})
+            r2 = _requests.get(DISCORD_USER_URL, headers={"Authorization": f"Bearer {access_token}", "User-Agent": "DiscordBot (NightBox, 1.0)"})
             user_data = r2.json()
         else:
             req2 = urllib.request.Request(DISCORD_USER_URL, headers={"Authorization": f"Bearer {access_token}"})
@@ -641,7 +641,7 @@ class BotonesRevision(discord.ui.View):
                 description=(
                     f"{nombre} fue admitido en el Staff de NightBox\n\n"
                     "Al igual que los demás postulantes y staff, esperamos que logre alcanzar sus metas, "
-                    "y demostrar lo mucho que vale dentro de PandaMC.\n\n"
+                    "y demostrar lo mucho que vale dentro de NightBox.\n\n"
                     "> ➡ Recuerda que entrar al staff es solo el comienzo. Hay muchas etapas que aprobar una vez logres entrar.\n"
                     "> ¡Mantenerse y crecer es lo difícil!\n\n"
                     'Un día un sabio dijo... "*Las pequeñas cosas son las responsables de los **grandes cambios**"'
@@ -691,7 +691,7 @@ class BotonesRevision(discord.ui.View):
                 description=(
                     f"{nombre} tu postulación para formar parte del Staff de NightBox ha sido revisada, "
                     "y en esta ocasión no ha sido aprobada.\n\n"
-                    "Agradecemos el tiempo, esfuerzo e interés que mostraste al querer formar parte del equipo de PandaMC.\n\n"
+                    "Agradecemos el tiempo, esfuerzo e interés que mostraste al querer formar parte del equipo de NightBox.\n\n"
                     "> ➡ Recuerda: un rechazo no define tu capacidad. Siempre puedes mejorar, aprender y volver a intentarlo en el futuro.\n"
                     "> Cada experiencia es una oportunidad para crecer.\n\n"
                     'Un día un sabio dijo... "Los grandes logros nacen después de muchos intentos."'
