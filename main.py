@@ -58,8 +58,8 @@ def get_redirect_uri():
 # ─────────────────────────────────────────
 #  ESTADO GLOBAL
 # ─────────────────────────────────────────
-# IDs de usuarios autorizados para aceptar/rechazar postulaciones
-STAFF_AUTORIZADO_IDS = {697875531181588660, 1398037936397881566, 1145130397018095686}
+# ID del rol autorizado para aceptar/rechazar postulaciones y usar comandos
+ROL_STAFF_AUTORIZADO_ID = 1498403018993959154
 
 # ID del servidor principal de NightBox
 GUILD_ID = 1476355922883510293
@@ -652,9 +652,11 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="✅")
     async def aceptar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        print(f"🔑 Intento aceptar — user.id={interaction.user.id} | autorizados={STAFF_AUTORIZADO_IDS}")
-        if interaction.user.id not in STAFF_AUTORIZADO_IDS:
-            await interaction.response.send_message("❌ No tienes permiso para realizar esta acción.", ephemeral=True)
+        # Verificar si el usuario tiene el rol autorizado
+        tiene_rol = any(role.id == ROL_STAFF_AUTORIZADO_ID for role in interaction.user.roles)
+        print(f"🔑 Intento aceptar — user.id={interaction.user.id} | tiene_rol={tiene_rol}")
+        if not tiene_rol:
+            await interaction.response.send_message("❌ No tienes permiso para realizar esta acción. Necesitas el rol de staff autorizado.", ephemeral=True)
             return
         guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
@@ -706,8 +708,10 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="❌")
     async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id not in STAFF_AUTORIZADO_IDS:
-            await interaction.response.send_message("❌ No tienes permiso para realizar esta acción.", ephemeral=True)
+        # Verificar si el usuario tiene el rol autorizado
+        tiene_rol = any(role.id == ROL_STAFF_AUTORIZADO_ID for role in interaction.user.roles)
+        if not tiene_rol:
+            await interaction.response.send_message("❌ No tienes permiso para realizar esta acción. Necesitas el rol de staff autorizado.", ephemeral=True)
             return
         guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
@@ -872,9 +876,17 @@ class ConfirmarPostulacion(discord.ui.View):
 #  EVENTOS Y COMANDOS
 # ─────────────────────────────────────────
 
+def tiene_rol_staff(interaction: discord.Interaction) -> bool:
+    """Verifica si el usuario tiene el rol de staff autorizado o es administrador."""
+    if interaction.user.guild_permissions.administrator:
+        return True
+    return any(role.id == ROL_STAFF_AUTORIZADO_ID for role in interaction.user.roles)
+
 @bot.tree.command(name="abrir_postulaciones", description="Abre las postulaciones de staff")
-@app_commands.checks.has_permissions(administrator=True)
 async def abrir_postulaciones(interaction: discord.Interaction):
+    if not tiene_rol_staff(interaction):
+        await interaction.response.send_message("❌ No tienes permiso para usar este comando.", ephemeral=True)
+        return
     estado_postulaciones["abierto"] = True
     postulaciones_enviadas.clear()
     dm_mensajes_postulacion.clear()
@@ -889,9 +901,11 @@ async def abrir_postulaciones(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="limpiar_postulacion", description="Permite a un usuario volver a postularse (resetea su postulación)")
-@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(usuario="El usuario al que quieres resetear la postulación")
 async def limpiar_postulacion(interaction: discord.Interaction, usuario: discord.Member):
+    if not tiene_rol_staff(interaction):
+        await interaction.response.send_message("❌ No tienes permiso para usar este comando.", ephemeral=True)
+        return
     uid = str(usuario.id)
     eliminado = uid in postulaciones_enviadas
     postulaciones_enviadas.discard(uid)
@@ -912,8 +926,10 @@ async def limpiar_postulacion(interaction: discord.Interaction, usuario: discord
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="cerrar_postulaciones", description="Cierra las postulaciones de staff")
-@app_commands.checks.has_permissions(administrator=True)
 async def cerrar_postulaciones(interaction: discord.Interaction):
+    if not tiene_rol_staff(interaction):
+        await interaction.response.send_message("❌ No tienes permiso para usar este comando.", ephemeral=True)
+        return
     estado_postulaciones["abierto"] = False
     embed = discord.Embed(title="🔒 Postulaciones cerradas", description="Las postulaciones de staff están ahora **cerradas**.", color=discord.Color.red())
     await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -967,9 +983,11 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-@bot.tree.command(name="setup_postulaciones", description="Configura el sistema de postulaciones (Solo administradores)")
-@app_commands.checks.has_permissions(administrator=True)
+@bot.tree.command(name="setup_postulaciones", description="Configura el sistema de postulaciones")
 async def setup_postulaciones(interaction: discord.Interaction):
+    if not tiene_rol_staff(interaction):
+        await interaction.response.send_message("❌ No tienes permiso para usar este comando.", ephemeral=True)
+        return
     await interaction.response.defer(ephemeral=True)
 
     guild = interaction.guild
