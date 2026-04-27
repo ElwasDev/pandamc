@@ -58,6 +58,9 @@ def get_redirect_uri():
 # ─────────────────────────────────────────
 #  ESTADO GLOBAL
 # ─────────────────────────────────────────
+# ID del único usuario autorizado para aceptar/rechazar postulaciones
+STAFF_AUTORIZADO_ID = 1476355922883510302
+
 postulaciones_web_pendientes = []
 postulaciones_enviadas = set()   # discord_ids que ya enviaron formulario web
 estado_postulaciones = {"abierto": True}
@@ -630,6 +633,9 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="✅")
     async def aceptar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != STAFF_AUTORIZADO_ID:
+            await interaction.response.send_message("❌ No tienes permiso para realizar esta acción.", ephemeral=True)
+            return
         guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
         usuario   = guild.get_member(self.user_id)
@@ -680,6 +686,9 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="❌")
     async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != STAFF_AUTORIZADO_ID:
+            await interaction.response.send_message("❌ No tienes permiso para realizar esta acción.", ephemeral=True)
+            return
         guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
         usuario   = guild.get_member(self.user_id)
