@@ -231,6 +231,143 @@ def guardar_config():
     pass
 
 # ─────────────────────────────────────────
+#  GENERADOR DE HTML DE POSTULACIÓN
+# ─────────────────────────────────────────
+def generar_html_postulacion(discord_tag, discord_name, discord_id, preguntas, respuestas_dict):
+    """Genera un archivo HTML con todas las preguntas y respuestas del postulante."""
+    filas = ""
+    for i, pregunta in enumerate(preguntas):
+        respuesta = respuestas_dict.get(i, respuestas_dict.get(f"p{i+1}", "Sin respuesta"))
+        if not respuesta:
+            respuesta = "Sin respuesta"
+        respuesta_html = str(respuesta).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+        fila_class = "par" if i % 2 == 0 else "impar"
+        filas += f"""
+        <div class="pregunta {fila_class}">
+            <div class="num">P{i+1}</div>
+            <div class="contenido">
+                <div class="texto-pregunta">{pregunta}</div>
+                <div class="texto-respuesta">{respuesta_html}</div>
+            </div>
+        </div>"""
+
+    html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postulación de {discord_name} — NightBox Staff</title>
+<style>
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0d0d0d;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }}
+  header {{
+    background: linear-gradient(135deg, #c0392b 0%, #8e0000 100%);
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }}
+  header .logo {{ font-size: 2.2rem; }}
+  header .info h1 {{ font-size: 1.5rem; font-weight: 700; color: #fff; }}
+  header .info p {{ font-size: 0.9rem; color: rgba(255,255,255,0.75); margin-top: 4px; }}
+  .badge {{
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 0.78rem;
+    color: #fff;
+    margin-top: 6px;
+  }}
+  .meta {{
+    background: #1a1a1a;
+    border-bottom: 1px solid #2a2a2a;
+    padding: 16px 32px;
+    display: flex;
+    gap: 32px;
+    font-size: 0.88rem;
+    color: #aaa;
+  }}
+  .meta span b {{ color: #e0e0e0; }}
+  .container {{ max-width: 860px; margin: 32px auto; padding: 0 20px 48px; }}
+  .titulo-seccion {{
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #c0392b;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-left: 4px;
+  }}
+  .pregunta {{
+    display: flex;
+    gap: 16px;
+    padding: 18px 20px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border-left: 3px solid #c0392b;
+    transition: transform 0.15s;
+  }}
+  .pregunta:hover {{ transform: translateX(3px); }}
+  .par {{ background: #1c1c1c; }}
+  .impar {{ background: #181818; }}
+  .num {{
+    min-width: 38px;
+    height: 38px;
+    background: #c0392b;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }}
+  .contenido {{ flex: 1; }}
+  .texto-pregunta {{ font-size: 0.85rem; color: #aaa; margin-bottom: 6px; font-weight: 500; }}
+  .texto-respuesta {{ font-size: 1rem; color: #e8e8e8; line-height: 1.5; }}
+  footer {{
+    text-align: center;
+    padding: 24px;
+    font-size: 0.78rem;
+    color: #444;
+    border-top: 1px solid #1e1e1e;
+  }}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🌙</div>
+  <div class="info">
+    <h1>Postulación de {discord_name}</h1>
+    <p>Staff Team — NightBox</p>
+    <span class="badge">📋 {len(preguntas)} preguntas respondidas</span>
+  </div>
+</header>
+<div class="meta">
+  <span>🎮 <b>{discord_tag}</b></span>
+  <span>🆔 <b>{discord_id}</b></span>
+</div>
+<div class="container">
+  <div class="titulo-seccion">Respuestas del postulante</div>
+  {filas}
+</div>
+<footer>NightBox Staff · Sistema de Postulaciones · Documento generado automáticamente</footer>
+</body>
+</html>"""
+    return html
+
+
+# ─────────────────────────────────────────
 #  TAREA: procesar postulaciones web
 # ─────────────────────────────────────────
 async def procesar_postulaciones_web():
@@ -265,29 +402,28 @@ async def enviar_al_canal_revision_web(data):
     discord_name = data.get('discord_name', discord_tag)
     discord_id   = data.get('discord_id', '')
 
-    embed = discord.Embed(
-        title="🌐 Nueva postulación WEB — Staff NightBox",
-        description=(
-            f"📌 **Discord:** `{discord_tag}` ({discord_name})\n"
-            f"🆔 **ID:** `{discord_id}`\n"
-        ),
-        color=discord.Color.red(),
-        timestamp=datetime.now()
+    # Emojis
+    nightbox_e = get_emoji(guild, EMOJI_MAPPING['nightbox']) or '🌙'
+    arrow_e    = get_emoji(guild, '1383arrowright') or '➡️'
+
+    # Construir respuestas para el HTML
+    preguntas = preguntas_data.get("preguntas", [])
+    respuestas_dict = {i: data.get(f"p{i+1}", "Sin respuesta") for i in range(len(preguntas))}
+
+    # Generar HTML y adjuntarlo como archivo
+    html_content = generar_html_postulacion(discord_tag, discord_name, discord_id, preguntas, respuestas_dict)
+    import io
+    html_file = discord.File(io.BytesIO(html_content.encode("utf-8")), filename=f"postulacion_{discord_tag}.html")
+
+    # Mensaje simple con info básica
+    mensaje = (
+        f"{nightbox_e} **Postulacion De {discord_name}**\n"
+        f"{arrow_e} **Discord:** {discord_tag}\n"
+        f"{arrow_e} **ID:** {discord_id}"
     )
 
-    # Agregar todas las respuestas del formulario
-    preguntas = preguntas_data.get("preguntas", [])
-    campos_form = [f"p{i+1}" for i in range(23)]
-    for i, key in enumerate(campos_form):
-        valor = data.get(key, "").strip()
-        if valor:
-            titulo = preguntas[i] if i < len(preguntas) else f"Pregunta {i+1}"
-            embed.add_field(name=f"P{i+1}: {titulo[:100]}", value=valor[:1024], inline=False)
-
-    embed.set_footer(text="Enviado desde la página web · Verificado con Discord OAuth2")
-
     view = BotonesRevision(int(discord_id) if discord_id else 0, discord_tag)
-    await canal_revision.send(embed=embed, view=view)
+    await canal_revision.send(content=mensaje, file=html_file, view=view)
 
     # ── Enviar DM al usuario con estado PENDIENTE ──
     if discord_id:
@@ -516,10 +652,11 @@ class BotonesRevision(discord.ui.View):
 
         await self._editar_dm_estado(guild, "Aceptado", discord.Color.green(), "✅")
 
-        embed = interaction.message.embeds[0]
-        embed.title = "✅ POSTULACIÓN ACEPTADA"
+        # Editar el contenido del mensaje (ya no es embed)
+        contenido_actual = interaction.message.content or ""
+        nuevo_contenido = "✅ **POSTULACIÓN ACEPTADA**\n" + "\n".join(contenido_actual.split("\n")[1:]) if "\n" in contenido_actual else "✅ **POSTULACIÓN ACEPTADA**\n" + contenido_actual
         for item in self.children: item.disabled = True
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.edit_message(content=nuevo_contenido, view=self)
         await interaction.followup.send(f"> ✅ Aceptada por {interaction.user.mention}")
 
     @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="❌")
@@ -565,10 +702,11 @@ class BotonesRevision(discord.ui.View):
 
         await self._editar_dm_estado(guild, "Rechazado", discord.Color.red(), "❌")
 
-        embed = interaction.message.embeds[0]
-        embed.title = "❌ POSTULACIÓN RECHAZADA"
+        # Editar el contenido del mensaje (ya no es embed)
+        contenido_actual = interaction.message.content or ""
+        nuevo_contenido = "❌ **POSTULACIÓN RECHAZADA**\n" + "\n".join(contenido_actual.split("\n")[1:]) if "\n" in contenido_actual else "❌ **POSTULACIÓN RECHAZADA**\n" + contenido_actual
         for item in self.children: item.disabled = True
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.edit_message(content=nuevo_contenido, view=self)
         await interaction.followup.send(f"> ❌ Rechazada por {interaction.user.mention}")
 
 
@@ -599,16 +737,29 @@ class ConfirmarPostulacion(discord.ui.View):
                 except: pass
 
         if canal_revision:
-            embed = discord.Embed(
-                title="🔑 Nueva postulación de staff",
-                description=f"**Usuario:** {interaction.user.mention} | **ID:** {interaction.user.id}",
-                color=discord.Color.red(), timestamp=datetime.now()
+            # Emojis
+            nightbox_e = get_emoji(interaction.guild, EMOJI_MAPPING['nightbox']) or '🌙'
+            arrow_e    = get_emoji(interaction.guild, '1383arrowright') or '➡️'
+
+            # Generar HTML con las respuestas
+            import io
+            preguntas_lista = preguntas_data["preguntas"]
+            respuestas_dict = {i: postulacion["respuestas"].get(i, "Sin respuesta") for i in range(len(preguntas_lista))}
+            html_content = generar_html_postulacion(
+                str(interaction.user),
+                interaction.user.display_name,
+                str(interaction.user.id),
+                preguntas_lista,
+                respuestas_dict
             )
-            for i, pregunta in enumerate(preguntas_data["preguntas"]):
-                embed.add_field(name=pregunta, value=postulacion["respuestas"].get(i, "Sin respuesta")[:1024], inline=False)
-            embed.set_thumbnail(url=interaction.user.display_avatar.url)
-            embed.set_footer(text=f"Postulación de {interaction.user.name}")
-            await canal_revision.send(embed=embed, view=BotonesRevision(interaction.user.id, interaction.user.name))
+            html_file = discord.File(io.BytesIO(html_content.encode("utf-8")), filename=f"postulacion_{interaction.user.name}.html")
+
+            mensaje = (
+                f"{nightbox_e} **Postulacion De {interaction.user.display_name}**\n"
+                f"{arrow_e} **Discord:** {interaction.user}\n"
+                f"{arrow_e} **ID:** {interaction.user.id}"
+            )
+            await canal_revision.send(content=mensaje, file=html_file, view=BotonesRevision(interaction.user.id, interaction.user.name))
 
         await interaction.response.send_message("✅ **¡Postulación enviada!** Este canal se cerrará en 5 segundos.")
 
