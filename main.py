@@ -701,8 +701,8 @@ class BotonesRevision(discord.ui.View):
         embed.title = "✅ POSTULACIÓN ACEPTADA"
         embed.color = discord.Color.green()
         for item in self.children: item.disabled = True
-        await interaction.response.edit_message(embed=embed, view=self)
-        await interaction.followup.send(f"> ✅ Aceptada por {interaction.user.mention}")
+        await interaction.response.send_message(f"> ✅ Aceptada por {interaction.user.mention}", ephemeral=False)
+        await interaction.message.edit(embed=embed, view=self)
 
     @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="❌")
     async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -754,8 +754,8 @@ class BotonesRevision(discord.ui.View):
         embed.title = "❌ POSTULACIÓN RECHAZADA"
         embed.color = discord.Color.red()
         for item in self.children: item.disabled = True
-        await interaction.response.edit_message(embed=embed, view=self)
-        await interaction.followup.send(f"> ❌ Rechazada por {interaction.user.mention}")
+        await interaction.response.send_message(f"> ❌ Rechazada por {interaction.user.mention}", ephemeral=False)
+        await interaction.message.edit(embed=embed, view=self)
 
 
 class ConfirmarPostulacion(discord.ui.View):
