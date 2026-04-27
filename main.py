@@ -58,8 +58,8 @@ def get_redirect_uri():
 # ─────────────────────────────────────────
 #  ESTADO GLOBAL
 # ─────────────────────────────────────────
-# ID del único usuario autorizado para aceptar/rechazar postulaciones
-STAFF_AUTORIZADO_ID = 1476355922883510302
+# IDs de usuarios autorizados para aceptar/rechazar postulaciones
+STAFF_AUTORIZADO_IDS = {697875531181588660, 1398037936397881566, 1145130397018095686}
 
 # ID del servidor principal de NightBox
 GUILD_ID = 1476355922883510293
@@ -652,8 +652,8 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="✅")
     async def aceptar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        print(f"🔑 Intento aceptar — user.id={interaction.user.id} | autorizado={STAFF_AUTORIZADO_ID}")
-        if interaction.user.id != STAFF_AUTORIZADO_ID:
+        print(f"🔑 Intento aceptar — user.id={interaction.user.id} | autorizados={STAFF_AUTORIZADO_IDS}")
+        if interaction.user.id not in STAFF_AUTORIZADO_IDS:
             await interaction.response.send_message("❌ No tienes permiso para realizar esta acción.", ephemeral=True)
             return
         guild     = interaction.guild
@@ -706,7 +706,7 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="❌")
     async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != STAFF_AUTORIZADO_ID:
+        if interaction.user.id not in STAFF_AUTORIZADO_IDS:
             await interaction.response.send_message("❌ No tienes permiso para realizar esta acción.", ephemeral=True)
             return
         guild     = interaction.guild
