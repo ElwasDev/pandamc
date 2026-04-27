@@ -652,6 +652,7 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="✅")
     async def aceptar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        print(f"🔑 Intento aceptar — user.id={interaction.user.id} | autorizado={STAFF_AUTORIZADO_ID}")
         if interaction.user.id != STAFF_AUTORIZADO_ID:
             await interaction.response.send_message("❌ No tienes permiso para realizar esta acción.", ephemeral=True)
             return
