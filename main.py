@@ -61,6 +61,9 @@ def get_redirect_uri():
 # ID del único usuario autorizado para aceptar/rechazar postulaciones
 STAFF_AUTORIZADO_ID = 1476355922883510302
 
+# ID del servidor principal de NightBox
+GUILD_ID = 1476355922883510293
+
 postulaciones_web_pendientes = []
 postulaciones_enviadas = set()   # discord_ids que ya enviaron formulario web
 estado_postulaciones = {"abierto": True}
@@ -389,15 +392,22 @@ async def procesar_postulaciones_web():
         await asyncio.sleep(3)
 
 async def enviar_al_canal_revision_web(data):
-    guild = next(iter(bot.guilds), None)
+    guild = bot.get_guild(GUILD_ID)
     if not guild:
-        print("❌ No se encontró ningún servidor")
+        print("❌ No se encontró el servidor con ID", GUILD_ID)
         return
 
     canal_revision = None
     if config.get("canal_revision_id"):
         canal_revision = guild.get_channel(config["canal_revision_id"])
-        print(f"🔍 Buscando canal por ID {config['canal_revision_id']}: {'encontrado' if canal_revision else 'NO encontrado'}")
+        if not canal_revision:
+            try:
+                canal_revision = await bot.fetch_channel(config["canal_revision_id"])
+                print(f"✅ Canal encontrado via fetch: {canal_revision.id}")
+            except Exception as e:
+                print(f"❌ fetch_channel falló: {e}")
+        else:
+            print(f"✅ Canal encontrado en caché: {canal_revision.id}")
     if not canal_revision:
         canal_revision = discord.utils.get(guild.text_channels, name="postulaciones-staff")
         print(f"🔍 Buscando canal por nombre: {'encontrado' if canal_revision else 'NO encontrado'}")
